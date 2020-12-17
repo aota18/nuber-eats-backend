@@ -7,9 +7,12 @@ import { User } from "./entites/user.entity";
 import * as jwt from 'jsonwebtoken';
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "src/jwt/jwt.service";
-import { EditProfileInput } from "src/restaurant/dtos/edit-profile.dto";
+import { EditProfileInput, EditProfileOutput } from "src/restaurant/dtos/edit-profile.dto";
 import { isObject } from "util";
 import { Verification } from "./entites/verification.entity";
+import { MailService } from "src/mail/mail.service";
+import { UserProfileOutput } from "./dtos/user-profile.dto";
+import { VerifyEmailOutput } from "./dtos/verify-email.dto";
 
 @Injectable()
 export class UsersService{
@@ -17,7 +20,8 @@ export class UsersService{
         @InjectRepository(User) private readonly users: Repository<User>,
         @InjectRepository(Verification) private readonly verifications: Repository<Verification>,
         private readonly config: ConfigService,
-        private readonly jwtService: JwtService
+        private readonly jwtService: JwtService,
+        private readonly mailService: MailService
     ){ }
 
 
@@ -31,11 +35,12 @@ export class UsersService{
             }
 
             const user = await this.users.save(this.users.create({email, password, role}));
-            await this.verifications.save(
+            const verification = await this.verifications.save(
                 this.verifications.create({
                     user
                 }),
             );
+            this.mailService.sendVerificationEmail(user.email, verification.code);
             return {ok: true};
         }catch(e){
             //make error
@@ -82,29 +87,52 @@ export class UsersService{
         }catch(error){
             return {
                 ok: false,
-                error
+                error: "Can't log user in"
             }
         }
     }
 
-    async findById(id:number) : Promise<User>{
-        return this.users.findOne({id});
+    async findById(id:number) : Promise<UserProfileOutput>{
+        try{
+            const user = await this.users.findOneOrFail({id});
+            return {
+                ok: true,
+                user,
+            };
+        } catch(error){
+            return {ok: false, error: 'User not found'}
+        }
     }
 
-    async editProfile(userId: number,{email, password}: EditProfileInput){
-        const user = await this.users.findOne(userId);
+    async editProfile(userId: number,{email, password}: EditProfileInput): Promise<EditProfileOutput>{
+        try{
+            const user = await this.users.findOne(userId);
 
-        if(email){
-            user.email = email;
-        }
+            if(email){
+                user.email = email;
+                user.verified = false;
+                const verification = await this.verifications.save(this.verifications.create({user}));
+                this.mailService.sendVerificationEmail(user.email, verification.code);
+            }
 
-        if(password){
-            user.password = password;
+            if(password){
+                user.password = password;
+            }
+            await this.users.save(user);
+
+            return {
+                ok: true,
+            };
+
+
+        } catch(error){
+            return {ok: false, error: 'Could not update profile'}
         }
-        this.users.save(user);
+        
+        
     }
 
-    async verifyEmail(code: string): Promise<boolean>{
+    async verifyEmail(code: string): Promise<VerifyEmailOutput>{
        try{
         const verification = await this.verifications.findOne(
             {code},
@@ -113,14 +141,15 @@ export class UsersService{
 
         if(verification){
             verification.user.verified=true;
-            this.users.save(verification.user);
-            return true;
+            await this.users.save(verification.user);
+            await this.verifications.delete(verification.id);
+            return {ok: true}
         }
 
-        return false;
+        return {ok: false, error: 'Verification not found'};
         }catch(e){
-            console.log(e);
-            return false;
+        
+            return {ok: false, error: 'Could not verify email'};
         }
     }
 }
