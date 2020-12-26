@@ -1,48 +1,84 @@
 
-import { Args, Query, Resolver, Mutation} from "@nestjs/graphql";
+import { Args, Query, Resolver, Mutation, ResolveField, Parent} from "@nestjs/graphql";
 import { Restaurant } from "./entities/restaurant.entity";
-import { CreateRestaurantDto } from './dtos/create-restaurant.dto';
+import {  CreateRestaurantInput, CreateRestaurantOutput } from './dtos/create-restaurant.dto';
 import { RestaurantService } from "./restaurant.service";
-import { UpdateRestaurantDto } from "./dtos/update-restaurant-dto";
+
+import { InjectRepository } from "@nestjs/typeorm";
+import { AuthUser } from "src/auth/auth-user.decorator";
+import { User, UserRole} from "src/users/entites/user.entity";
+import { Role } from "src/auth/role.decorator";
+import { EditRestaurantInput, EditRestaurantOutput } from "./dtos/edit-restaurant.dto";
+import { DeleteRestaurantInput, DeleteRestaurantOutput } from "./dtos/delete-restaurant.dto";
+import { Category } from "./entities/category.entity";
+import { AllCategoriesOutput } from "./dtos/all-categories.dto";
+import { CategoryInput, CategoryOutput } from "./dtos/category.dto";
+import { RestaurantsInput, RestaurantsOutput } from "./dtos/restaurants.dto";
 
 
 @Resolver(of => Restaurant)
 export class RestaurantResolver {
 
-    constructor(private readonly restauarntService: RestaurantService) {}
-    /* For GraphQL*/
-    @Query(returns => [Restaurant])
-    restaurants(): Promise<Restaurant[]>{
-     
-        return this.restauarntService.getAll();
-    }
-    @Mutation(returns => Boolean)
-    async createRestaurant(@Args('input') createRestaurantDto: CreateRestaurantDto ): Promise<boolean> {
+    constructor(
+       
+        private readonly restaurantService: RestaurantService) {}
 
-            try{
-                await this.restauarntService.createRestaurant(createRestaurantDto);
-                return true;
-            }catch(e){
-                console.log(e);
-                return false;
-            }
-            
+    @Mutation(returns => CreateRestaurantOutput)
+    @Role(['Owner'])
+    async createRestaurant(
+        @AuthUser() authUser: User,
+        @Args('input') createRestaurantInput: CreateRestaurantInput 
+        ): Promise<CreateRestaurantOutput> {
+        return this.restaurantService.createRestaurant(authUser, createRestaurantInput);
     }
 
-    @Mutation(returns => Boolean)
-    async updateRestaurant(@Args() UpdateRestaurantDto: UpdateRestaurantDto): Promise<boolean>{
 
-        try {
-            await this.restauarntService.updateRestaurant(UpdateRestaurantDto);
-            return true;
-        } catch(e){
-            console.log(e);
-            return false;
+    @Mutation(returns => EditRestaurantOutput)
+    @Role(['Owner'])
+    async editRestaurant(
+        @AuthUser() owner: User,
+        @Args('input') editRestaurantInput: EditRestaurantInput
+    ): Promise<EditRestaurantOutput>{
+        return this.restaurantService.editRestaurant(owner, editRestaurantInput)
+    }
+
+    @Mutation(returns => DeleteRestaurantOutput)
+    @Role(['Owner'])
+    async deleteRestaurant(
+        @AuthUser() owner: User,
+        @Args('input') deleteRestaurantInput: DeleteRestaurantInput
+    ): Promise<DeleteRestaurantOutput>{
+        return this.restaurantService.deleteRestaurant(owner, deleteRestaurantInput)
+    }
+
+
+}
+
+
+@Resolver(of => Category)
+export class CategoryResolver {
+    constructor(private readonly restaurantService: RestaurantService){}
+
+        @ResolveField(type => Number)
+        restaurantCount(@Parent() category: Category): Promise<number> {
+            return this.restaurantService.countRestaurants(category);
         }
-    }
 
-    /* Args() doesn't have to have name  : updateRestaruatnDto = Args
-        Args() should have name: updateRestaurantDto = Inputtype */
+        @Query(type => AllCategoriesOutput)
+        allCategories() : Promise<AllCategoriesOutput>{
+            return this.restaurantService.allCategories();
+        }
+
+        @Query(type => CategoryOutput)
+        category(@Args('input')  categoryInput: CategoryInput) : Promise<CategoryOutput>{
+            return this.restaurantService.findCategoryBySlug(categoryInput);
+        }
+
+        @Query(type => RestaurantsOutput)
+        restaurants(@Args('input') restaurantsInput: RestaurantsInput) : Promise<RestaurantsOutput>{
+            return this.restaurantService.allRestaurants(restaurantsInput)
+        }
+
     
 }
 

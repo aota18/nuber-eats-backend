@@ -4,11 +4,8 @@ import { Repository } from "typeorm";
 import { CreateAccountInput } from "./dtos/create-account.dto";
 import { LoginInput } from "./dtos/login.dto";
 import { User } from "./entites/user.entity";
-import * as jwt from 'jsonwebtoken';
-import { ConfigService } from "@nestjs/config";
 import { JwtService } from "src/jwt/jwt.service";
-import { EditProfileInput, EditProfileOutput } from "src/restaurant/dtos/edit-profile.dto";
-import { isObject } from "util";
+import { EditProfileInput, EditProfileOutput } from "src/users/dtos/edit-profile.dto";
 import { Verification } from "./entites/verification.entity";
 import { MailService } from "src/mail/mail.service";
 import { UserProfileOutput } from "./dtos/user-profile.dto";
@@ -137,7 +134,7 @@ export class UsersService{
        try{
         const verification = await this.verifications.findOne(
             {code},
-            {loadRelationIds: true}
+            {relations: ['user']}
             );
 
         if(verification){
@@ -149,7 +146,7 @@ export class UsersService{
 
         return {ok: false, error: 'Verification not found'};
         }catch(e){
-        
+            console.log(e)
             return {ok: false, error: 'Could not verify email'};
         }
     }
