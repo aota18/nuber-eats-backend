@@ -6,7 +6,10 @@ import { JwtService } from "./jwt.service";
 
 @Injectable()
 export class JwtMiddleware implements NestMiddleware{
-    constructor(private readonly jwtService: JwtService, private readonly userService: UsersService){}
+    constructor(
+        private readonly jwtService: JwtService, 
+        private readonly userService: UsersService
+    ){}
 
     async use(req: Request, res: Response, next: NextFunction){
         if("x-jwt" in req.headers){
