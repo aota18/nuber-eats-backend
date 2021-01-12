@@ -13,8 +13,8 @@ export class UploadsController {
 
         AWS.config.update({
             credentials: {
-                accessKeyId: 'AKIA3MCCONMZRDR64COB',
-                secretAccessKey: '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'
+                accessKeyId: '',
+                secretAccessKey: ''
             }
         });
 
