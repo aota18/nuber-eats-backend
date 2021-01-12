@@ -63,7 +63,9 @@ export class OrderService {
                         if(dishOption.extra){
                             dishFinalPrice+=dishOption.extra
                         }else {
-                            const dishOptionChoice = dishOption.choices.find(optionChoice => optionChoice.name === itemOption.choice);
+                            const dishOptionChoice = dishOption.choices?.find(
+                                optionChoice => optionChoice.name === itemOption.choice
+                            );
 
                             if(dishOptionChoice){
                                 if(dishOptionChoice.extra) dishFinalPrice+=dishOptionChoice.extra
@@ -94,7 +96,8 @@ export class OrderService {
             })
 
             return {
-                ok: true
+                ok: true,
+                orderId: order.id
             }
 
         }catch(error){
@@ -212,7 +215,10 @@ export class OrderService {
                 canEdit = false;
             }
 
+            console.log(user.role, status);
+
             if(user.role === UserRole.Owner){
+                
                 if(status !== OrderStatus.Cooking && status !== OrderStatus.Cooked){
                     canEdit = false;
                 }

@@ -22,6 +22,7 @@ import { CommonModule } from './common/common.module';
 import { PaymentsModule } from './payments/payments.module';
 import { Payment } from './payments/entities/payment.entity';
 import { ScheduleModule } from '@nestjs/schedule';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -42,6 +43,8 @@ import { ScheduleModule } from '@nestjs/schedule';
         MAILGUN_API_KEY: Joi.string().required(),
         MAILGUN_DOMAIN_NAME: Joi.string().required(),
         MAILGUN_FROM_EMAIL: Joi.string().required(),
+        S3_ACCESS_KEY_ID: Joi.string().required(),
+        S3_SECRET_ACCESS_KEY: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRoot({
@@ -52,7 +55,7 @@ import { ScheduleModule } from '@nestjs/schedule';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       synchronize: process.env.NODE_ENV !== 'prod',
-      logging:  process.env.NODE_ENV !== 'prod' && process.env.NODE_ENV !== 'test',
+      logging:  process.env.NODE_ENV !== 'prod' && process.env.NODE_ENV !== 'dev',
       entities: [
         User, 
         Verification, 
@@ -91,7 +94,8 @@ import { ScheduleModule } from '@nestjs/schedule';
   RestaurantModule,
   OrdersModule,
   CommonModule,
-  PaymentsModule
+  PaymentsModule,
+  UploadsModule
 ],
   controllers: [],
   providers: [],

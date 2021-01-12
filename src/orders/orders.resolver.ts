@@ -75,7 +75,7 @@ export class OrderResolver {
 
     @Subscription(returns => Order)
     @Role(["Delivery"])
-    cookedOrdrers(){
+    cookedOrders(){
         return this.pubsub.asyncIterator(NEW_COOKED_ORDER)
     }
 
@@ -96,7 +96,7 @@ export class OrderResolver {
         }
     })
     @Role(["Any"])
-    orderUpdates(){
+    orderUpdates(@Args('input') orderUpdatesInput: OrderUpdatesInput){
         return this.pubsub.asyncIterator(NEW_ORDER_UPDATE)
     }
 

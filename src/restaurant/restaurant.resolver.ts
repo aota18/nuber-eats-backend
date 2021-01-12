@@ -4,9 +4,8 @@ import { Restaurant } from "./entities/restaurant.entity";
 import {  CreateRestaurantInput, CreateRestaurantOutput } from './dtos/create-restaurant.dto';
 import { RestaurantService } from "./restaurant.service";
 
-import { InjectRepository } from "@nestjs/typeorm";
 import { AuthUser } from "src/auth/auth-user.decorator";
-import { User, UserRole} from "src/users/entites/user.entity";
+import { User} from "src/users/entites/user.entity";
 import { Role } from "src/auth/role.decorator";
 import { EditRestaurantInput, EditRestaurantOutput } from "./dtos/edit-restaurant.dto";
 import { DeleteRestaurantInput, DeleteRestaurantOutput } from "./dtos/delete-restaurant.dto";
@@ -20,6 +19,8 @@ import { Dish } from "./entities/dish.entity";
 import { CreateDishInput, CreateDishOutput } from "./dtos/create-dish.dto";
 import { EditDishInput, EditDishOutput } from "./dtos/edit-dish.dto";
 import { DeleteDishInput, DeleteDishOutput } from "./dtos/delete-dish.dto";
+import { MyRestaurantsOutput } from "./dtos/my-restaurants.dto";
+import { MyRestaurantInput, MyRestaurantOutput } from "./dtos/my-restaurant.dto";
 
 
 @Resolver(of => Restaurant)
@@ -30,7 +31,7 @@ export class RestaurantResolver {
         private readonly restaurantService: RestaurantService) {}
 
     @Mutation(returns => CreateRestaurantOutput)
-    // @Role(['Owner'])
+    @Role(['Owner'])
     async createRestaurant(
         @AuthUser() authUser: User,
         @Args('input') createRestaurantInput: CreateRestaurantInput 
@@ -38,6 +39,7 @@ export class RestaurantResolver {
         return this.restaurantService.createRestaurant(authUser, createRestaurantInput);
     }
 
+   
 
     @Mutation(returns => EditRestaurantOutput)
     @Role(['Owner'])
@@ -56,6 +58,33 @@ export class RestaurantResolver {
     ): Promise<DeleteRestaurantOutput>{
         return this.restaurantService.deleteRestaurant(owner, deleteRestaurantInput)
     }
+
+    @Query(returns => MyRestaurantsOutput)
+        @Role(['Owner'])
+        async myRestaurants(
+            @AuthUser() owner: User,
+        ): Promise<MyRestaurantsOutput> {
+            return this.restaurantService.myRestaurants(owner);
+        }
+    
+        @Query(returns => MyRestaurantOutput)
+        @Role(['Owner'])
+        async myRestaurant(
+            @AuthUser() owner: User,
+            @Args('input') myrestaurantInput: MyRestaurantInput
+        ): Promise<MyRestaurantsOutput> {
+            return this.restaurantService.myRestaurant(owner, myrestaurantInput);
+        }
+
+        @Query(type => RestaurantsOutput)
+        restaurants(@Args('input') restaurantsInput: RestaurantsInput) : Promise<RestaurantsOutput>{
+            return this.restaurantService.allRestaurants(restaurantsInput)
+        }
+
+        @Query(returns => RestaurantOutput)
+        restaurant(@Args('input') restaurantInput : RestaurantInput) : Promise<RestaurantOutput>{
+            return this.restaurantService.findRestaurantById(restaurantInput)
+        }
 
 
 }
@@ -80,16 +109,9 @@ export class CategoryResolver {
             return this.restaurantService.findCategoryBySlug(categoryInput);
         }
 
-        @Query(type => RestaurantsOutput)
-        restaurants(@Args('input') restaurantsInput: RestaurantsInput) : Promise<RestaurantsOutput>{
-            return this.restaurantService.allRestaurants(restaurantsInput)
-        }
-
-        @Query(returns => RestaurantOutput)
-        restaurant(@Args('input') restaurantInput : RestaurantInput) : Promise<RestaurantOutput>{
-            return this.restaurantService.findRestaurantById(restaurantInput)
-        }
-
+       
+        
+    
 
         @Query(returns => SearchRestaurantOutput)
         searchRestaurant(@Args('input') searchRestaurantInput: SearchRestaurantInput) : Promise<SearchRestaurantOutput>{

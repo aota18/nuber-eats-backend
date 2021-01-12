@@ -21,11 +21,11 @@ export class MailService{
             emailVars: EmailVar[]
             ): Promise<boolean>{
          const form = new FormData();
-         form.append('from', `Daniel from Number Eats <mailgun@${this.options.domain}>`)
-         form.append('to', `sdw9090@naver.com`);
+         form.append('from', `Daniel from Nuber Eats <mailgun@${this.options.domain}>`)
+         form.append('to', `sapphire031794@gmail.com`);
          form.append('subject', subject);
          form.append('template', template);
-         emailVars.forEach(eVar => form.append(eVar.key, eVar.value));
+         emailVars.forEach(eVar => form.append(`v:${eVar.key}`, eVar.value));
 
          try{
             await got.post(`https://api.mailgun.net/v3/${this.options.domain}/messages`, {

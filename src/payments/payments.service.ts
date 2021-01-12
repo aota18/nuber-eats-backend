@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Cron } from "@nestjs/schedule";
+import { Cron, Interval } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Restaurant } from "src/restaurant/entities/restaurant.entity";
 import { User } from "src/users/entites/user.entity";
@@ -81,6 +81,8 @@ export class PaymentService {
         }
     }
 
+
+    @Interval(2000)
     async checkPromotedRestaurants() {
         const restaurants = await this.restaurants.find({
             isPromoted: true,
